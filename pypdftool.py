@@ -8,6 +8,8 @@ from reportlab.graphics.charts.textlabels import Label
 from reportlab.lib import colors
 from reportlab.graphics import renderPDF
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from pprint import pprint
 
 def prepareTextMod(optionsData):
 	# get input pdf
@@ -37,7 +39,14 @@ def prepareTextMod(optionsData):
 			lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
 			lab.boxStrokeColor = colors.HexColor(mod.get('borderColor', '#000000'))
 			lab.boxStrokeWidth = mod.get('borderWidth', 0)
-			lab.fontName = mod.get('fontName', 'Courier')
+			fontName = mod.get('fontName', 'Helvetica')
+			#input_pdf.
+			#justFace = pdfmetrics.EmbeddedType1Face(afmFile, pfbFile)
+			#faceName = 'DarkGardenMK' # pulled from AFM file
+			#pdfmetrics.registerTypeFace(justFace)
+			#justFont = pdfmetrics.Font('DarkGardenMK', faceName, 'WinAnsiEncoding')
+			# #dfdf
+			lab.fontName = fontName
 			if mod.get('Bold', True):
 				lab.fontName = lab.fontName + '-Bold'
 			lab.fontSize = mod.get('fontSize', 20)
