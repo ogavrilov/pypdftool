@@ -1,5 +1,5 @@
 {
-	"inputFile": "pr1.pdf",
+	"inputFile": "pr2.pdf",
 	"outputFile": "output.pdf",
 	"mod":
 	{
@@ -12,8 +12,8 @@
 		"fontSize": 15,
 		"Bold": true,
 		"pageNumber": 1,
-		"left": 500,
-		"top": 80,
-		"angle": 5
+		"left": 85,
+		"top": 90,
+		"angle": 0
 	}
 }

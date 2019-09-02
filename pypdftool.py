@@ -33,8 +33,8 @@ def prepareTextMod(optionsData):
 			lab = Label()
 			lab.boxAnchor = 'ne'
 			lab.angle = mod.get('angle', 0)
-			lab.x = mod.get('left', 0)
-			lab.y = mod.get('top', 0)
+			lab.x = int(pageWidth * mod.get('left', 10) / 100)
+			lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
 			lab.boxStrokeColor = colors.HexColor(mod.get('borderColor', '#000000'))
 			lab.boxStrokeWidth = mod.get('borderWidth', 0)
 			lab.fontName = mod.get('fontName', 'Courier')
@@ -49,7 +49,6 @@ def prepareTextMod(optionsData):
 				textS += curLine
 			lab.setText(textS)
 			d.add(lab)
-			#renderPDF.drawToFile(d, mod.get('type') + '_.pdf', '')
 			renderPDF.draw(d, can, 0, 0)
 			can.save()
 			packet.seek(0)
@@ -80,11 +79,12 @@ if __name__ == '__main__':
 		if inputFile is None or not os.path.exists(inputFile):
 			print('Can not find input type')
 		else:
-			# add to mods merge files
+			# check mod
 			mod = optionsData.get('mod')
 			if mod is None:
 				print('Can not find mod in options file')
 			else:
+				# mod to input pdf
 				ModType = mod.get('type')
 				if not ModType is None and ModType == "addText":
 					prepareTextMod(optionsData)
