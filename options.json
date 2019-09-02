@@ -1,0 +1,19 @@
+{
+	"inputFile": "pr1.pdf",
+	"outputFile": "output.pdf",
+	"mod":
+	{
+		"type": "addText",
+		"text": [ "first line", "second line"],
+		"textColor": "#3f48cc",
+		"borderColor": "#3f48cc",
+		"borderWidth": 2,
+		"fontName": "Courier",
+		"fontSize": 15,
+		"Bold": true,
+		"pageNumber": 1,
+		"left": 500,
+		"top": 80,
+		"angle": 5
+	}
+}
