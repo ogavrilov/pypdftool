@@ -23,6 +23,8 @@ def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400):
 	lab.boxStrokeColor = colors.HexColor(mod.get('borderColor', '#000000'))
 	lab.boxStrokeWidth = mod.get('borderWidth', 0)
 	fontName = mod.get('fontName', 'Courier')
+	if fontName == '':
+		fontName = 'Courier'
 	if mod.get('Bold', True):
 		fontName = fontName + '-Bold'
 	if fontName not in pdfmetrics.getRegisteredFontNames():
