@@ -11,6 +11,35 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+def regFont(fontName, fontBold=False):
+	result = ''
+	# try to reg font fontName'-Bold'
+	if fontBold == True:
+		try:
+			pdfmetrics.registerFont(TTFont(fontName + '-Bold', fontName + '-Bold.ttf'))
+			result = fontName + '-Bold'
+		except:
+			result = ''
+	# try to reg font fontName'Bd'
+	if fontBold == True and result == '':
+		try:
+			pdfmetrics.registerFont(TTFont(fontName + 'Bd', fontName + 'Bd.ttf'))
+			result = fontName + 'Bd'
+		except:
+			a = 1
+	# try to reg font fontName without bold
+	if result == '':
+		try:
+			pdfmetrics.registerFont(TTFont(fontName, fontName + '.ttf'))
+			result = fontName
+		except:
+			a = 1
+	# default: get first font
+	if result == '':
+		result = pdfmetrics.getRegisteredFontNames()[0]
+		print('Warning: can not register font "' + fontName + '", use standart "' + result + '", check text encoding!')
+	return result
+
 def alignTextArray(textArray, alignValue, fontName, fontSize):
 	# get lines from text
 	linesArray = []
@@ -57,17 +86,10 @@ def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400):
 	lab.leftPadding = mod.get('leftPadding', 0)
 	lab.rightPadding = mod.get('rightPadding', 0)
 	lab.bottomPadding = mod.get('bottomPadding', 0)
-	fontName = mod.get('fontName', 'Courier')
+	fontName = mod.get('fontName', 'Verdana')
 	if fontName == '':
-		fontName = 'Courier'
-	if mod.get('Bold', True):
-		fontName = fontName + '-Bold'
-	if fontName not in pdfmetrics.getRegisteredFontNames():
-		try:
-			pdfmetrics.registerFont(TTFont(fontName, fontName + '.ttf'))
-		except:
-			print('Warning: can not register font "' + fontName + '", use standart "Courier", check text encoding!')
-			fontName = pdfmetrics.getRegisteredFontNames()[0]
+		fontName = 'Verdana'
+	fontName = regFont(fontName, mod.get('fontBold', True))
 	lab.fontName = fontName
 	lab.fontSize = mod.get('fontSize', 20)
 	lab.fillColor = colors.HexColor(mod.get('textColor', '#000000'))
@@ -91,13 +113,12 @@ if __name__ == '__main__':
 	else:
 		# get arg
 		optionsFile = sys.argv[1]
-		#optionsFile = 'options.json'
 		# read options file
 		with open (optionsFile, "r", encoding='utf-8') as fileH:
 			optionsData = json.load(fileH)
 		# check input file
-		inputFile = optionsData.get('inputFile')
-		if inputFile is None or (inputFile != '%newpdf%' and not os.path.exists(inputFile)):
+		inputFile = optionsData.get('inputFile', '%newpdf%')
+		if inputFile != '%newpdf%' and not os.path.exists(inputFile):
 			print('Can not find input type')
 		else:
 			# check mod
