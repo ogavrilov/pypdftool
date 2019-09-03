@@ -1,19 +1,28 @@
 {
-	"inputFile": "pr2.pdf",
+	"inputFile": "%newpdf%",
 	"outputFile": "output.pdf",
-	"mod":
+	"mod": 
 	{
 		"type": "addText",
-		"text": [ "Line 1", "Строка2"],
+		"text": 
+		[
+		"Line 1\nString-----2",
+		"Line 3--"
+		],
 		"textColor": "#3f48cc",
 		"borderColor": "#3f48cc",
 		"borderWidth": 2,
-		"fontName": "Arial",
-		"fontSize": 15,
-		"Bold": true,
+		"fontName": "Verdana",
+		"fontSize": 14,
+		"Bold": false,
 		"pageNumber": 1,
-		"left": 85,
-		"top": 90,
-		"angle": 0
+		"left": 50,
+		"top": 50,
+		"angle": 0,
+		"align": "center",
+		"topPadding": 1,
+		"leftPadding": 2,
+		"rightPadding": 3,
+		"bottomPadding": 4
 	}
 }

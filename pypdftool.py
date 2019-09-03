@@ -11,6 +11,37 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+def alignTextArray(textArray, alignValue, fontName, fontSize):
+	# get lines from text
+	linesArray = []
+	for curLine in textArray:
+		linesArray += curLine.split('\n')
+	# align
+	if alignValue == 'right' or alignValue == 'center':
+		# get max len
+		maxLen = 0
+		for curLine in linesArray:
+			if maxLen < pdfmetrics.stringWidth(curLine, fontName, fontSize):
+				maxLen = pdfmetrics.stringWidth(curLine, fontName, fontSize)
+		# copy text array and add empty
+		result = []
+		for curLine in linesArray:
+			if len(curLine) == maxLen:
+				result.append(curLine)
+			elif alignValue == 'right':
+				curLineNew = curLine
+				while pdfmetrics.stringWidth(' ' + curLineNew, fontName, fontSize) <= maxLen:
+					curLineNew = ' ' + curLineNew
+				result.append(curLineNew)
+			else:
+				curLineNew = curLine
+				while pdfmetrics.stringWidth(' ' + curLineNew + ' ', fontName, fontSize) <= maxLen:
+					curLineNew = ' ' + curLineNew + ' '
+				result.append(curLineNew)
+		return result
+	else:
+		return linesArray
+
 def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400):
 	packet = io.BytesIO()
 	can = canvas.Canvas(packet)
@@ -22,6 +53,10 @@ def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400):
 	lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
 	lab.boxStrokeColor = colors.HexColor(mod.get('borderColor', '#000000'))
 	lab.boxStrokeWidth = mod.get('borderWidth', 0)
+	lab.topPadding = mod.get('topPadding', 0)
+	lab.leftPadding = mod.get('leftPadding', 0)
+	lab.rightPadding = mod.get('rightPadding', 0)
+	lab.bottomPadding = mod.get('bottomPadding', 0)
 	fontName = mod.get('fontName', 'Courier')
 	if fontName == '':
 		fontName = 'Courier'
@@ -37,7 +72,8 @@ def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400):
 	lab.fontSize = mod.get('fontSize', 20)
 	lab.fillColor = colors.HexColor(mod.get('textColor', '#000000'))
 	textS = ''
-	for curLine in mod.get('text', []):
+	textArray = alignTextArray(mod.get('text', []), mod.get('align', 'left'), lab.fontName, lab.fontSize)
+	for curLine in textArray:
 		if len(textS) > 0:
 			textS += '\n'
 		textS += curLine
@@ -55,6 +91,7 @@ if __name__ == '__main__':
 	else:
 		# get arg
 		optionsFile = sys.argv[1]
+		#optionsFile = 'options.json'
 		# read options file
 		with open (optionsFile, "r", encoding='utf-8') as fileH:
 			optionsData = json.load(fileH)
