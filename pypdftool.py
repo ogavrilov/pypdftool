@@ -9,7 +9,7 @@ from reportlab.lib import colors
 from reportlab.graphics import renderPDF
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
-from pprint import pprint
+from reportlab.pdfbase.ttfonts import TTFont
 
 def prepareTextMod(optionsData):
 	# get input pdf
@@ -39,16 +39,16 @@ def prepareTextMod(optionsData):
 			lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
 			lab.boxStrokeColor = colors.HexColor(mod.get('borderColor', '#000000'))
 			lab.boxStrokeWidth = mod.get('borderWidth', 0)
-			fontName = mod.get('fontName', 'Helvetica')
-			#input_pdf.
-			#justFace = pdfmetrics.EmbeddedType1Face(afmFile, pfbFile)
-			#faceName = 'DarkGardenMK' # pulled from AFM file
-			#pdfmetrics.registerTypeFace(justFace)
-			#justFont = pdfmetrics.Font('DarkGardenMK', faceName, 'WinAnsiEncoding')
-			# #dfdf
-			lab.fontName = fontName
+			fontName = mod.get('fontName', 'Courier')
 			if mod.get('Bold', True):
-				lab.fontName = lab.fontName + '-Bold'
+				fontName = fontName + '-Bold'
+			if fontName not in pdfmetrics.getRegisteredFontNames():
+				try:
+					pdfmetrics.registerFont(TTFont(fontName, fontName + '.ttf'))
+				except:
+					print('Warning: can not register font "' + fontName + '", use standart "Courier", check text encoding!')
+					fontName = pdfmetrics.getRegisteredFontNames()[0]
+			lab.fontName = fontName
 			lab.fontSize = mod.get('fontSize', 20)
 			lab.fillColor = colors.HexColor(mod.get('textColor', '#000000'))
 			textS = ''
@@ -79,10 +79,8 @@ if __name__ == '__main__':
 		# get arg
 		optionsFile = sys.argv[1]
 		# read options file
-		with open (optionsFile, "r") as fileH:
-			optionsJSON = fileH.read()
-		# get options data from JSON
-		optionsData = json.loads(optionsJSON)
+		with open (optionsFile, "r", encoding='utf-8') as fileH:
+			optionsData = json.load(fileH)
 		# check input file
 		inputFile = optionsData.get('inputFile')
 		if inputFile is None or not os.path.exists(inputFile):
