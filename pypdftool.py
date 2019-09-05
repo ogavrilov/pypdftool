@@ -71,15 +71,32 @@ def alignTextArray(textArray, alignValue, fontName, fontSize):
 	else:
 		return linesArray
 
-def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400):
+def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400, rotatePage = None):
 	packet = io.BytesIO()
-	can = canvas.Canvas(packet)
-	d = Drawing(pageHeight, pageWidth)
+	if rotatePage == None or rotatePage == 0 or rotatePage == 180:
+		can = canvas.Canvas(packet, (pageWidth, pageHeight))
+		d = Drawing(pageWidth, pageHeight)
+	else:
+		can = canvas.Canvas(packet, (pageHeight, pageWidth))
+		d = Drawing(pageHeight, pageWidth)
 	lab = Label()
 	lab.boxAnchor = 'ne'
-	lab.angle = mod.get('angle', 0)
-	lab.x = int(pageWidth * mod.get('left', 10) / 100)
-	lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
+	if rotatePage == None or rotatePage == 0:
+		lab.angle = mod.get('angle', 0)
+		lab.x = int(pageWidth * mod.get('left', 10) / 100)
+		lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
+	elif rotatePage == 90:
+		lab.angle = mod.get('angle', 0) + 90
+		lab.x = int(pageWidth * mod.get('left', 10) / 100)
+		lab.y = int(pageHeight * mod.get('top', 10) / 100)
+	elif rotatePage == 180:
+		lab.angle = mod.get('angle', 0) + 180
+		lab.x = int(pageWidth - pageWidth * mod.get('left', 10) / 100)
+		lab.y = int(pageHeight * mod.get('top', 10) / 100)
+	elif rotatePage == 270:
+		lab.angle = mod.get('angle', 0) + 270
+		lab.x = int(pageWidth - pageWidth * mod.get('left', 10) / 100)
+		lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
 	lab.boxStrokeColor = colors.HexColor(mod.get('borderColor', '#000000'))
 	lab.boxStrokeWidth = mod.get('borderWidth', 0)
 	lab.topPadding = mod.get('topPadding', 0)
@@ -126,44 +143,47 @@ if __name__ == '__main__':
 			if mod is None:
 				print('Can not find mod in options file')
 			else:
-				# mod to input pdf
-				ModType = mod.get('type')
-				input_pdf_name = optionsData.get('inputFile')
-				if input_pdf_name == '%newpdf%':
-					outputFile = optionsData.get('outputFile')
-					mod = optionsData.get('mod')
-					# draw
-					if ModType == 'addText':
-						packet = get_pdf_packet(mod)
-					new_pdf = PdfFileReader(packet)
-					output = PdfFileWriter()
-					output.addPage(new_pdf.getPage(0))
-					outputStream = open(outputFile, "wb")
-					output.write(outputStream)
-					outputStream.close()
-				else:
-					# get input pdf
-					input_pdf = PdfFileReader(open(input_pdf_name, "rb"))
-					# prepare new pdf
-					outputFile = optionsData.get('outputFile')
-					if outputFile is None:
-						outputFile = input_pdf_name
-					output = PdfFileWriter()
-					# for each page
-					pageInd = 0
-					mod = optionsData.get('mod')
-					pageNumber = mod.get('pageNumber', -1)
-					for pageInd in range(input_pdf.getNumPages()):
-						curPage = input_pdf.getPage(pageInd)
-						if pageNumber == 0 or pageNumber == pageInd + 1:
-							pageHeight = curPage.mediaBox.getHeight()
-							pageWidth = curPage.mediaBox.getWidth()
-							# draw
-							if ModType == 'addText':
-								packet = get_pdf_packet(mod, pageHeight, pageWidth)
-								new_pdf = PdfFileReader(packet)
-								curPage.mergePage(new_pdf.getPage(0))
-						output.addPage(curPage)
-					outputStream = open(outputFile, "wb")
-					output.write(outputStream)
-					outputStream.close()
+				try:
+					# mod to input pdf
+					ModType = mod.get('type')
+					input_pdf_name = optionsData.get('inputFile')
+					if input_pdf_name == '%newpdf%':
+						outputFile = optionsData.get('outputFile')
+						mod = optionsData.get('mod')
+						# draw
+						if ModType == 'addText':
+							packet = get_pdf_packet(mod)
+						new_pdf = PdfFileReader(packet)
+						output = PdfFileWriter()
+						output.addPage(new_pdf.getPage(0))
+						outputStream = open(outputFile, "wb")
+						output.write(outputStream)
+						outputStream.close()
+					else:
+						# get input pdf
+						input_pdf = PdfFileReader(open(input_pdf_name, "rb"))
+						# prepare new pdf
+						outputFile = optionsData.get('outputFile')
+						if outputFile is None:
+							outputFile = input_pdf_name
+						output = PdfFileWriter()
+						# for each page
+						pageInd = 0
+						mod = optionsData.get('mod')
+						pageNumber = mod.get('pageNumber', -1)
+						for pageInd in range(input_pdf.getNumPages()):
+							curPage = input_pdf.getPage(pageInd)
+							if pageNumber == 0 or pageNumber == pageInd + 1:
+								pageHeight = curPage.mediaBox.getHeight()
+								pageWidth = curPage.mediaBox.getWidth()
+								# draw
+								if ModType == 'addText':
+									packet = get_pdf_packet(mod, pageHeight, pageWidth, curPage.get('/Rotate'))
+									new_pdf = PdfFileReader(packet)
+									curPage.mergePage(new_pdf.getPage(0))
+							output.addPage(curPage)
+						outputStream = open(outputFile, "wb")
+						output.write(outputStream)
+						outputStream.close()
+				except:
+					print('Error in processing')
