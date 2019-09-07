@@ -1,6 +1,7 @@
 {
 	"inputFile": "%newpdf%",
 	"outputFile": "output.pdf",
+	"reconstructPDF": true,
 	"mod": 
 	{
 		"type": "addText",

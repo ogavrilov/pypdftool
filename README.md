@@ -13,6 +13,7 @@ options.json content
 ````json
 inputFile: string // when stay out use '%newpdf%' - created new pdf A4
 outputFile: string // when inputFile stay out - required, when inputFile have existing file can stay out and be used value from inputFile
+reconstructPDF: bool // when PDF xref first line start not from 0, tool will copy input file, and replace 0 to start at the first xref line
 mod: object // required
 mod.type: string // default 'addText', other values not work yet
 mod.text: array // array of string, required

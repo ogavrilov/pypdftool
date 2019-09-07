@@ -11,6 +11,39 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+def readPDFLine(stream):
+    buff = b''
+    while True:
+        try:
+            anotherByte = stream.read(1)
+        except:
+            return False
+        if anotherByte == b'\r':
+            break
+        buff += anotherByte
+    return buff
+
+def reconstructPDF(fileName, newFileName):
+    try:
+        sourceFileSize = os.path.getsize(fileName)
+        newFile = open(newFileName, 'wb')
+        with open(fileName, 'rb') as sourceFile:
+            sourceFile.seek(0)
+            while True:
+                line = readPDFLine(sourceFile)
+                newFile.write(line + b'\r')
+                if line == b'xref' and sourceFile.tell() < sourceFileSize:
+                    line = readPDFLine(sourceFile)
+                    if line[0:1] != b'0':
+                        line = b'0' + line[1:]
+                    newFile.write(line + b'\r')
+                if sourceFile.tell() == sourceFileSize:
+                    break
+        newFile.close()
+        return ''
+    except Exception as errorObject:
+        return str(errorObject)
+
 def regFont(fontName, fontBold=False):
 	result = ''
 	# try to reg font fontName'-Bold'
@@ -26,14 +59,14 @@ def regFont(fontName, fontBold=False):
 			pdfmetrics.registerFont(TTFont(fontName + 'Bd', fontName + 'Bd.ttf'))
 			result = fontName + 'Bd'
 		except:
-			a = 1
+			result = ''
 	# try to reg font fontName without bold
 	if result == '':
 		try:
 			pdfmetrics.registerFont(TTFont(fontName, fontName + '.ttf'))
 			result = fontName
 		except:
-			a = 1
+			result = ''
 	# default: get first font
 	if result == '':
 		result = pdfmetrics.getRegisteredFontNames()[0]
@@ -71,7 +104,7 @@ def alignTextArray(textArray, alignValue, fontName, fontSize):
 	else:
 		return linesArray
 
-def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400, rotatePage = None):
+def getPDFPacket(mod, pageHeight = 400, pageWidth = 400, rotatePage = None):
 	packet = io.BytesIO()
 	if rotatePage == None or rotatePage == 0 or rotatePage == 180:
 		can = canvas.Canvas(packet, (pageWidth, pageHeight))
@@ -122,68 +155,108 @@ def get_pdf_packet(mod, pageHeight = 400, pageWidth = 400, rotatePage = None):
 	can.save()
 	packet.seek(0)
 	return packet
-	
+
+def addDataToPDF(optionsData, inputFile):
+    try:
+        # mod to input pdf
+        mod = optionsData.get('mod')
+        ModType = mod.get('type')
+        if inputFile == '%newpdf%':
+            outputFile = optionsData.get('outputFile')
+            mod = optionsData.get('mod')
+            # draw
+            if ModType == 'addText':
+                packet = getPDFPacket(mod)
+            new_pdf = PdfFileReader(packet)
+            output = PdfFileWriter()
+            output.addPage(new_pdf.getPage(0))
+            outputStream = open(outputFile, "wb")
+            output.write(outputStream)
+            outputStream.close()
+        else:
+            # get input pdf
+            input_pdf = PdfFileReader(open(inputFile, "rb"))
+            # prepare new pdf
+            outputFile = optionsData.get('outputFile')
+            if outputFile is None:
+                outputFile = inputFile
+            output = PdfFileWriter()
+            # for each page
+            pageInd = 0
+            pageNumber = mod.get('pageNumber', -1)
+            for pageInd in range(input_pdf.getNumPages()):
+                curPage = input_pdf.getPage(pageInd)
+                if pageNumber == 0 or pageNumber == pageInd + 1:
+                    pageHeight = curPage.mediaBox.getHeight()
+                    pageWidth = curPage.mediaBox.getWidth()
+                    # draw
+                    if ModType == 'addText':
+                        packet = getPDFPacket(mod, pageHeight, pageWidth, curPage.get('/Rotate'))
+                        new_pdf = PdfFileReader(packet)
+                        curPage.mergePage(new_pdf.getPage(0))
+                output.addPage(curPage)
+            outputStream = open(outputFile, "wb")
+            output.write(outputStream)
+            outputStream.close()
+        return ''
+    except Exception as errorObject:
+        return str(errorObject)
+
 if __name__ == '__main__':
-	# check arg
-	if len(sys.argv) == 1:
-		print('Can not find path to options file')
-	else:
-		# get arg
-		optionsFile = sys.argv[1]
-		# read options file
-		with open (optionsFile, "r", encoding='utf-8') as fileH:
-			optionsData = json.load(fileH)
-		# check input file
-		inputFile = optionsData.get('inputFile', '%newpdf%')
-		if inputFile != '%newpdf%' and not os.path.exists(inputFile):
-			print('Can not find input type')
-		else:
-			# check mod
-			mod = optionsData.get('mod')
-			if mod is None:
-				print('Can not find mod in options file')
-			else:
-				try:
-					# mod to input pdf
-					ModType = mod.get('type')
-					input_pdf_name = optionsData.get('inputFile')
-					if input_pdf_name == '%newpdf%':
-						outputFile = optionsData.get('outputFile')
-						mod = optionsData.get('mod')
-						# draw
-						if ModType == 'addText':
-							packet = get_pdf_packet(mod)
-						new_pdf = PdfFileReader(packet)
-						output = PdfFileWriter()
-						output.addPage(new_pdf.getPage(0))
-						outputStream = open(outputFile, "wb")
-						output.write(outputStream)
-						outputStream.close()
-					else:
-						# get input pdf
-						input_pdf = PdfFileReader(open(input_pdf_name, "rb"))
-						# prepare new pdf
-						outputFile = optionsData.get('outputFile')
-						if outputFile is None:
-							outputFile = input_pdf_name
-						output = PdfFileWriter()
-						# for each page
-						pageInd = 0
-						mod = optionsData.get('mod')
-						pageNumber = mod.get('pageNumber', -1)
-						for pageInd in range(input_pdf.getNumPages()):
-							curPage = input_pdf.getPage(pageInd)
-							if pageNumber == 0 or pageNumber == pageInd + 1:
-								pageHeight = curPage.mediaBox.getHeight()
-								pageWidth = curPage.mediaBox.getWidth()
-								# draw
-								if ModType == 'addText':
-									packet = get_pdf_packet(mod, pageHeight, pageWidth, curPage.get('/Rotate'))
-									new_pdf = PdfFileReader(packet)
-									curPage.mergePage(new_pdf.getPage(0))
-							output.addPage(curPage)
-						outputStream = open(outputFile, "wb")
-						output.write(outputStream)
-						outputStream.close()
-				except:
-					print('Error in processing')
+    resultInfo = {}
+    resultInfo['result'] = False
+    resultInfo['errorText'] = 'Unknown error'
+    # check arg
+    #if len(sys.argv) == 1:
+    if False:
+    #    resultInfo['errorText'] = 'First argument not found (options file name)'
+        a = 1
+    else:
+        #optionsFile = sys.argv[1]
+        optionsFile = 'options.json'
+        # check exist
+        if os.path.exists(optionsFile) == False:
+            resultInfo['errorText'] = 'Options file not found ("' + str(optionsFile) + '")'
+        else:
+            # read options file
+            try:
+                with open (optionsFile, "r", encoding='utf-8') as optionsFileHandle:
+                    optionsData = json.load(optionsFileHandle)
+            except Exception as errorObject:
+                optionsData = None
+                resultInfo['errorText'] = 'Error reading options file JSON ("' + str(optionsFile) + '"):\n\r' + str(errorObject)
+            if optionsData != None:
+                # check input file
+                inputFile = optionsData.get('inputFile', '%newpdf%')
+                if inputFile != '%newpdf%' and not os.path.exists(inputFile):
+                    resultInfo['errorText'] = 'Input file not found ("' + str(inputFile) + '")'
+                else:
+                    # check mod
+                    mod = optionsData.get('mod')
+                    if mod is None:
+                        resultInfo['errorText'] = 'Not found "mod" node in options file'
+                    else:
+                        addResult = addDataToPDF(optionsData, inputFile)
+                        if addResult != '':
+                            if optionsData.get('reconstructPDF', False):
+                                newInputFile = 'reconstruct_input_file.pdf'
+                                if inputFile == newInputFile:
+                                    newInputFile = 'reconstruct_input_file_.pdf'
+                                outputFile = optionsData.get('outputFile')
+                                if outputFile == newInputFile:
+                                    newInputFile = 'reconstruct_input_file__.pdf'
+                                reconstructPDFResult = reconstructPDF(inputFile, newInputFile)
+                                if reconstructPDFResult == '':
+                                    resultInfo['errorText'] = addDataToPDF(optionsData, newInputFile)
+                                else:
+                                    resultInfo['errorText'] = reconstructPDFResult
+                            else:
+                                resultInfo['errorText'] = addResult
+                        else:
+                            resultInfo['errorText'] = addResult
+            else:
+                resultInfo['errorText'] = 'Empty options file ("' + str(optionsFile) + '")'
+    if resultInfo['errorText'] == '':
+        resultInfo['result'] = True
+    with open('result.log', 'w') as resultLogFile:
+        json.dump(resultInfo, resultLogFile)
