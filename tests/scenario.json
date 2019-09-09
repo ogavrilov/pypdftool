@@ -1,0 +1,82 @@
+[
+	{
+		"testID": "1",
+		"testTitle": "new input file, output file node not exists",
+		"inputFile": "",
+		"optionsFile": "options1.json",
+		"resultFlag": false
+	},
+	{
+		"testID": "2",
+		"testTitle": "new input file, output file node empty",
+		"inputFile": "",
+		"optionsFile": "options2.json",
+		"resultFlag": false
+	},
+	{
+		"testID": "3",
+		"testTitle": "'mode' node not exists",
+		"inputFile": "correct_sample.pdf",
+		"optionsFile": "options3.json",
+		"resultFlag": false
+	},
+	{
+		"testID": "4",
+		"testTitle": "incorrect options JSON file",
+		"inputFile": "correct_sample.pdf",
+		"optionsFile": "options4.json",
+		"resultFlag": true
+	},
+	{
+		"testID": "5",
+		"testTitle": "new pdf without reconstruct",
+		"inputFile": "",
+		"optionsFile": "options6.json",
+		"resultFlag": true
+	},
+	{
+		"testID": "6",
+		"testTitle": "correct pdf with reconstruct",
+		"inputFile": "correct_sample.pdf",
+		"optionsFile": "options7.json",
+		"resultFlag": true
+	},
+	{
+		"testID": "7",
+		"testTitle": "correct pdf with non zero xref without reconstruct",
+		"inputFile": "correct_sample_wih_non_zero_xref.pdf",
+		"optionsFile": "options6.json",
+		"resultFlag": false
+	},
+	{
+		"testID": "8",
+		"testTitle": "correct pdf with non zero xref with reconstruct",
+		"inputFile": "correct_sample_wih_non_zero_xref.pdf",
+		"optionsFile": "options7.json",
+		"resultFlag": true
+	},
+	{
+		"testID": "9",
+		"testTitle": "incorrect pdf with reconstruct",
+		"inputFile": "incorrect_sample.pdf",
+		"optionsFile": "options7.json",
+		"resultFlag": false
+	},
+	{
+		"testID": "10",
+		"testTitle": "incorrect pdf without reconstruct",
+		"inputFile": "incorrect_sample.pdf",
+		"optionsFile": "options6.json",
+		"resultFlag": false
+	},
+	{
+		"testID": "11",
+		"testTitle": "mass pdf with correct options and with reconstruct",
+		"inputURL": 
+			[
+				"http://www.africau.edu/images/default/sample.pdf"
+			],
+		"optionsFile": "options7.json",
+		"resultFlag": true
+	}	
+]

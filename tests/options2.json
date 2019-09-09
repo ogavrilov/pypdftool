@@ -1,0 +1,29 @@
+{
+	"inputFile": "",
+	"outputFile": "",
+	"reconstructPDF": true,
+	"mod": 
+	{
+		"type": "addText",
+		"text": 
+		[
+		"Line 1\nString-----2",
+		"Line 3--"
+		],
+		"textColor": "#3f48cc",
+		"borderColor": "#3f48cc",
+		"borderWidth": 0,
+		"fontName": "Arial",
+		"fontSize": 14,
+		"fontBold": true,
+		"pageNumber": 1,
+		"left": 50,
+		"top": 50,
+		"angle": 0,
+		"align": "center",
+		"topPadding": 1,
+		"leftPadding": 2,
+		"rightPadding": 3,
+		"bottomPadding": 4
+	}
+}

@@ -11,14 +11,14 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-def readPDFLine(stream):
+def readPDFLine(stream, streamSize):
     buff = b''
     while True:
         try:
             anotherByte = stream.read(1)
         except:
             return False
-        if anotherByte == b'\r':
+        if anotherByte == b'\r' or stream.tell() >= streamSize:
             break
         buff += anotherByte
     return buff
@@ -30,11 +30,14 @@ def reconstructPDF(fileName, newFileName):
         with open(fileName, 'rb') as sourceFile:
             sourceFile.seek(0)
             while True:
-                line = readPDFLine(sourceFile)
+                line = readPDFLine(sourceFile, sourceFileSize)
                 newFile.write(line + b'\r')
-                if line == b'xref' and sourceFile.tell() < sourceFileSize:
-                    line = readPDFLine(sourceFile)
-                    if line[0:1] != b'0':
+                if (line == b'xref' or line == b'\nxref') and sourceFile.tell() < sourceFileSize:
+                    line = readPDFLine(sourceFile, sourceFileSize)
+                    if line[0:1] == b'\n':
+                        if line[2:3] != b'0':
+                            line = b'\n0' + line[2:]
+                    elif line[0:1] != b'0':
                         line = b'0' + line[1:]
                     newFile.write(line + b'\r')
                 if sourceFile.tell() == sourceFileSize:
@@ -207,13 +210,10 @@ if __name__ == '__main__':
     resultInfo['result'] = False
     resultInfo['errorText'] = 'Unknown error'
     # check arg
-    #if len(sys.argv) == 1:
-    if False:
-    #    resultInfo['errorText'] = 'First argument not found (options file name)'
-        a = 1
+    if len(sys.argv) == 1:
+        resultInfo['errorText'] = 'First argument not found (options file name)'
     else:
-        #optionsFile = sys.argv[1]
-        optionsFile = 'options.json'
+        optionsFile = sys.argv[1]
         # check exist
         if os.path.exists(optionsFile) == False:
             resultInfo['errorText'] = 'Options file not found ("' + str(optionsFile) + '")'
@@ -228,6 +228,8 @@ if __name__ == '__main__':
             if optionsData != None:
                 # check input file
                 inputFile = optionsData.get('inputFile', '%newpdf%')
+                if inputFile == '':
+                    inputFile = '%newpdf%'
                 if inputFile != '%newpdf%' and not os.path.exists(inputFile):
                     resultInfo['errorText'] = 'Input file not found ("' + str(inputFile) + '")'
                 else:
@@ -258,5 +260,9 @@ if __name__ == '__main__':
                 resultInfo['errorText'] = 'Empty options file ("' + str(optionsFile) + '")'
     if resultInfo['errorText'] == '':
         resultInfo['result'] = True
-    with open('result.log', 'w') as resultLogFile:
+    try:
+        resultLogFileName = optionsData.get('resultLog', 'result.log')
+    except:
+        resultLogFileName = 'result.log'
+    with open(resultLogFileName, 'w') as resultLogFile:
         json.dump(resultInfo, resultLogFile)
