@@ -232,6 +232,8 @@ if __name__ == '__main__':
                     inputFile = '%newpdf%'
                 if inputFile != '%newpdf%' and not os.path.exists(inputFile):
                     resultInfo['errorText'] = 'Input file not found ("' + str(inputFile) + '")'
+                elif inputFile == '%newpdf%' and optionsData.get('outputFile', '') == '':
+                    resultInfo['errorText'] = 'When input file field not specified (need new file), you need specified output field!'
                 else:
                     # check mod
                     mod = optionsData.get('mod')

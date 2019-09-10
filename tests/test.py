@@ -122,40 +122,46 @@ def executeTests(scriptPath, scenarioPath, resultFileName):
 						shutil.copyfile(inputFile, inputFileName)
 					elif not testData.get('URL') is None:
 						requestAnswer = requests.get(testData.get('URL'))
-						with open(inputFileName, 'wb') as inputFileHandle:
-							inputFileHandle.write(requestAnswer.content)
-					# write options file
-					outpitFileName = tempDirectory + '/output.pdf'
-					resultLogFileName = tempDirectory + '/result.log'
-					if testData['optionsData'].get('outputFile', '') != '':
-						testData['optionsData']['outputFile'] = outpitFileName
-					if testData['optionsData'].get('inputFile', '') != '':
-						testData['optionsData']['inputFile'] = inputFileName
-					testData['optionsData']['resultLog'] = resultLogFileName
-					with open(tempDirectory + '/options.json', 'w') as optionsFileHandle:
-						json.dump(testData['optionsData'], optionsFileHandle)
-					# execute test
-					try:
-						os.system('python ' + scriptPath + ' ' + tempDirectory + '/options.json')
-						processLog = None
-						with open(resultLogFileName, 'r') as resultLogFileHandle:
-							processLog = json.load(resultLogFileHandle)
-						processResult = processLog.get('result', False)
-						if not processLog is None:
-							testData['result'] = (processResult == testData['resultFlag'])
-						if not processLog is None and processLog.get('errorText', '') != '':
-							testData['errorText'] = processLog.get('errorText', '')
-						if processResult and testData['optionsData'].get('inputFile', '') != '':
-							startSize = os.path.getsize(tempDirectory + '/input.pdf')
-							endSize = os.path.getsize(outpitFileName)
+						if requestAnswer.status_code != 200:
+							testData['commentText'] = 'Problem at downloading test input file (' + testData.get('URL') + ')'
+							testData['testLaunched'] = False
+							testData['result'] = False
 						else:
-							startSize = 0
-							endSize = 0
-						testData['fileSizeChange'] = endSize - startSize
-						testData['resultData'] = processLog
-					except Exception as errorObject:
-						testData['result'] = False
-						testData['errorText'] = str(errorObject)
+							with open(inputFileName, 'wb') as inputFileHandle:
+								inputFileHandle.write(requestAnswer.content)
+					# write options file
+					if testData['testLaunched']:
+						outpitFileName = tempDirectory + '/output.pdf'
+						resultLogFileName = tempDirectory + '/result.log'
+						if testData['optionsData'].get('outputFile', '') != '':
+							testData['optionsData']['outputFile'] = outpitFileName
+						if testData['optionsData'].get('inputFile', '') != '':
+							testData['optionsData']['inputFile'] = inputFileName
+						testData['optionsData']['resultLog'] = resultLogFileName
+						with open(tempDirectory + '/options.json', 'w') as optionsFileHandle:
+							json.dump(testData['optionsData'], optionsFileHandle)
+						# execute test
+						try:
+							os.system('python ' + scriptPath + ' ' + tempDirectory + '/options.json')
+							processLog = None
+							with open(resultLogFileName, 'r') as resultLogFileHandle:
+								processLog = json.load(resultLogFileHandle)
+							processResult = processLog.get('result', False)
+							if not processLog is None:
+								testData['result'] = (processResult == testData['resultFlag'])
+							if not processLog is None and processLog.get('errorText', '') != '':
+								testData['errorText'] = processLog.get('errorText', '')
+							if processResult and testData['optionsData'].get('inputFile', '') != '':
+								startSize = os.path.getsize(tempDirectory + '/input.pdf')
+								endSize = os.path.getsize(outpitFileName)
+							else:
+								startSize = 0
+								endSize = 0
+							testData['fileSizeChange'] = endSize - startSize
+							testData['resultData'] = processLog
+						except Exception as errorObject:
+							testData['result'] = False
+							testData['errorText'] = str(errorObject)
 				if not testData['result']:
 					ErrorArray.append(testData)
 			else:
