@@ -161,47 +161,82 @@ def getPDFPacket(mod, pageHeight = 400, pageWidth = 400, rotatePage = None):
 
 def addDataToPDF(optionsData, inputFile):
     try:
-        # mod to input pdf
         mod = optionsData.get('mod')
         ModType = mod.get('type')
-        if inputFile == '%newpdf%':
-            outputFile = optionsData.get('outputFile')
-            mod = optionsData.get('mod')
-            # draw
-            if ModType == 'addText':
-                packet = getPDFPacket(mod)
-            new_pdf = PdfFileReader(packet)
-            output = PdfFileWriter()
-            output.addPage(new_pdf.getPage(0))
-            outputStream = open(outputFile, "wb")
-            output.write(outputStream)
-            outputStream.close()
-        else:
-            # get input pdf
+        if ModType == 'addText':
+            # mod to input pdf
+            if inputFile == '%newpdf%':
+                outputFile = optionsData.get('outputFile')
+                mod = optionsData.get('mod')
+                # draw
+                if ModType == 'addText':
+                    packet = getPDFPacket(mod)
+                new_pdf = PdfFileReader(packet)
+                output = PdfFileWriter()
+                output.addPage(new_pdf.getPage(0))
+                outputStream = open(outputFile, "wb")
+                output.write(outputStream)
+                outputStream.close()
+            else:
+                # get input pdf
+                input_pdf = PdfFileReader(open(inputFile, "rb"))
+                # prepare new pdf
+                outputFile = optionsData.get('outputFile')
+                if outputFile is None:
+                    outputFile = inputFile
+                output = PdfFileWriter()
+                # for each page
+                pageNumber = mod.get('pageNumber', -1)
+                for pageInd in range(input_pdf.getNumPages()):
+                    curPage = input_pdf.getPage(pageInd)
+                    if pageNumber == 0 or pageNumber == pageInd + 1:
+                        pageHeight = curPage.mediaBox.getHeight()
+                        pageWidth = curPage.mediaBox.getWidth()
+                        # draw
+                        if ModType == 'addText':
+                            packet = getPDFPacket(mod, pageHeight, pageWidth, curPage.get('/Rotate'))
+                            new_pdf = PdfFileReader(packet)
+                            curPage.mergePage(new_pdf.getPage(0))
+                    output.addPage(curPage)
+                outputStream = open(outputFile, "wb")
+                output.write(outputStream)
+                outputStream.close()
+            return ''
+        elif ModType == 'print':
             input_pdf = PdfFileReader(open(inputFile, "rb"))
-            # prepare new pdf
-            outputFile = optionsData.get('outputFile')
-            if outputFile is None:
-                outputFile = inputFile
             output = PdfFileWriter()
-            # for each page
-            pageInd = 0
-            pageNumber = mod.get('pageNumber', -1)
+            pageNumber = mod.get('pageNumber', 0)
             for pageInd in range(input_pdf.getNumPages()):
-                curPage = input_pdf.getPage(pageInd)
                 if pageNumber == 0 or pageNumber == pageInd + 1:
-                    pageHeight = curPage.mediaBox.getHeight()
-                    pageWidth = curPage.mediaBox.getWidth()
-                    # draw
-                    if ModType == 'addText':
-                        packet = getPDFPacket(mod, pageHeight, pageWidth, curPage.get('/Rotate'))
-                        new_pdf = PdfFileReader(packet)
-                        curPage.mergePage(new_pdf.getPage(0))
-                output.addPage(curPage)
+                    output.addPage(input_pdf.getPage(pageInd))
+            jsCode = '''
+            var checkp;
+            if (checkp != 1) {this.print({bUI:true,bSilent:false,bShrinkToFit:true}); checkp = 1;}
+            '''
+            output.addJS(jsCode)
+            outputFile = optionsData.get('outputFile')
             outputStream = open(outputFile, "wb")
             output.write(outputStream)
             outputStream.close()
-        return ''
+            return ''
+        elif ModType == 'rotate':
+            input_pdf = PdfFileReader(open(inputFile, "rb"))
+            output = PdfFileWriter()
+            pageNumber = mod.get('pageNumber', 0)
+            angle = mod.get('angle', 0)
+            for pageInd in range(input_pdf.getNumPages()):
+                if pageNumber == 0 or pageNumber == pageInd + 1:
+                    if angle > 0:
+                        output.addPage(input_pdf.getPage(pageInd).rotateClockwise(angle))
+                    else:
+                        output.addPage(input_pdf.getPage(pageInd).rotateCounterClockwise(-angle))
+                else:
+                    output.addPage(input_pdf.getPage(pageInd))
+            outputFile = optionsData.get('outputFile')
+            outputStream = open(outputFile, "wb")
+            output.write(outputStream)
+            outputStream.close()
+            return ''
     except Exception as errorObject:
         return str(errorObject)
 

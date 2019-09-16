@@ -71,6 +71,13 @@
 	},
 	{
 		"testID": "11",
+		"testTitle": "another correct pdf",
+		"inputFile": "correct_sample2.pdf",
+		"optionsFile": "options7.json",
+		"resultFlag": true
+	},
+	{
+		"testID": "12",
 		"testTitle": "mass pdf with correct options and with reconstruct",
 		"inputURL": 
 			[
@@ -80,9 +87,7 @@
 				"http://redmondshop.com/upload/iblock/eef/RS-728B-UM-5.pdf",
 				"http://www.keil.com/dd/docs/datashts/atmel/at_c51ism.pdf",
 				"http://www.cogtech.usc.edu/publications/kirschner_Sweller_Clark.pdf",
-				"http://www.fili-park.ru/upload/iblock/d92/d92cea46c91a04cdb8d0d100d8e8316f.pdf",
 				"http://grammarware.net/text/syutkin/HrefInLaTeX.pdf",
-				"http://360beauty.ru/files/example.pdf",
 				"http://www.pdf995.com/samples/pdf.pdf",
 				"http://unec.edu.az/application/uploads/2014/12/pdf-sample.pdf",
 				"http://www.orimi.com/pdf-test.pdf",

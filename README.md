@@ -1,8 +1,18 @@
 # pypdftool
 
-Tool for basic insert to PDF. The insert can be text in several lines, and also the insertion can be inscribed in a rectangle with a frame.
+Tool for basic edit PDF.
+
+Basic edit variants:
+ - addText - the insert can be text in several lines, and also the insertion can be inscribed in a rectangle with a frame (you can set some parameters, see below)
+ - print - in the PDF will include JavaScript code their in the opening PDF will start printing document (you can set page number for print or zero for print all pages)
+ - rotate - in the PDF will rotate page (you can set angle and page number for rotate or zero for rotate all pages).
 
 Text of insertion can be customized using color, fon and size. The color and width of line of the rectangle can also be customized.
+
+#### Requirements
+
+ - PyPDF2
+ - ReportLab
 
 ## How to use
 
@@ -24,43 +34,43 @@ options.json content
 	// object - contains insertion options
 	"mod": 
 	{
-		// string - default 'addText' - other values not yet provided
+		// string - default 'addText' - available values: 'addText', 'print', 'rotate' - other values not yet provided
 		"type": "addText",
-		// array of strings - text to be inserted
+		// array of strings - text to be inserted (only relevant for type 'addText')
 		"text": 
 		[
 		"Line 1\nString-----2",
 		"Line 3--"
 		],
-		// string - default #000000 - hex color format
+		// string - default #000000 - hex color format (only relevant for type 'addText')
 		"textColor": "#3f48cc",
-		// string - default #000000 - hex color format
+		// string - default #000000 - hex color format (only relevant for type 'addText')
 		"borderColor": "#3f48cc",
-		// int - default 0
+		// int - default 0 (only relevant for type 'addText')
 		"borderWidth": 0,
-		// string - default: Verdana - if specified ont cannot be found in the system, the default font will be used, if it cannot be found in the system, we will try get the font from the pdf document and use it
+		// string - default: Verdana - if specified ont cannot be found in the system, the default font will be used, if it cannot be found in the system, we will try get the font from the pdf document and use it (only relevant for type 'addText')
 		"fontName": "Arial",
-		// int - default 20
+		// int - default 20 (only relevant for type 'addText')
 		"fontSize": 14,
-		// bool - default false
+		// bool - default false (only relevant for type 'addText')
 		"fontBold": true,
 		// int - default 1 - the page number on which to insert; if 0 is specified, the insert will be placed on each page
 		"pageNumber": 1,
-		// int - default 10 - distance from left page side in the per cent
+		// int - default 10 - distance from left page side in the per cent (only relevant for type 'addText')
 		"left": 50,
-		// int - default 10 - distance from top page side in the per cent
+		// int - default 10 - distance from top page side in the per cent (only relevant for type 'addText')
 		"top": 50,
-		// int - default 0 - the angle at which the insert will be roated counterclockwise
+		// int - default 0 - the angle at which the insert will be rotated counterclockwise (only relevant for types 'addText' and 'rotate')
 		"angle": 0,
-		// string - default 'left' - available values: 'left', 'center', 'right' - text alignment in the rectangle frame
+		// string - default 'left' - available values: 'left', 'center', 'right' - text alignment in the rectangle frame (only relevant for type 'addText')
 		"align": "center",
-		// int - default 0 - indent text above the rectangle line
+		// int - default 0 - indent text above the rectangle line (only relevant for type 'addText')
 		"topPadding": 1,
-		// int - default 0 - indent text to the left the rectangle line
+		// int - default 0 - indent text to the left the rectangle line (only relevant for type 'addText')
 		"leftPadding": 2,
-		// int - default 0 - indent text to the right the rectangle line
+		// int - default 0 - indent text to the right the rectangle line (only relevant for type 'addText')
 		"rightPadding": 3,
-		// int - default 0 - indent text below the rectangle line
+		// int - default 0 - indent text below the rectangle line (only relevant for type 'addText')
 		"bottomPadding": 4
 	}
 }
