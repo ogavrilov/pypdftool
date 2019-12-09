@@ -3,13 +3,16 @@ import os
 import sys
 import json
 from PyPDF2 import PdfFileWriter, PdfFileReader
+import reportlab
 from reportlab.graphics.shapes import *
 from reportlab.graphics.charts.textlabels import Label
 from reportlab.lib import colors
+import reportlab.lib.pagesizes as pdf_sizes
 from reportlab.graphics import renderPDF
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+import PIL
 
 def readPDFLine(stream, streamSize):
     buff = b''
@@ -107,9 +110,15 @@ def alignTextArray(textArray, alignValue, fontName, fontSize):
 	else:
 		return linesArray
 
-def getPDFPacket(mod, pageHeight = 400, pageWidth = 400, rotatePage = None):
+def getPDFPacket(mod, pageHeight = 400, pageWidth = 400, rotatePageValue = None):
 	packet = io.BytesIO()
-	if rotatePage == None or rotatePage == 0 or rotatePage == 180:
+	if rotatePageValue is None:
+		rotatePage = 0
+	else:
+		rotatePage = rotatePageValue
+	while not rotatePage is None and rotatePage >= 360:
+		rotatePage -= 360
+	if rotatePage == None or rotatePage % 180 == 0:
 		can = canvas.Canvas(packet, (pageWidth, pageHeight))
 		d = Drawing(pageWidth, pageHeight)
 	else:
@@ -117,7 +126,7 @@ def getPDFPacket(mod, pageHeight = 400, pageWidth = 400, rotatePage = None):
 		d = Drawing(pageHeight, pageWidth)
 	lab = Label()
 	lab.boxAnchor = 'ne'
-	if rotatePage == None or rotatePage == 0:
+	if rotatePage == None or rotatePage % 180 == 0:
 		lab.angle = mod.get('angle', 0)
 		lab.x = int(pageWidth * mod.get('left', 10) / 100)
 		lab.y = int(pageHeight - pageHeight * mod.get('top', 10) / 100)
@@ -237,18 +246,115 @@ def addDataToPDF(optionsData, inputFile):
             output.write(outputStream)
             outputStream.close()
             return ''
+        elif ModType == 'TIFFconvertToPDF':
+            outputFile = optionsData.get('outputFile')
+            result = TIFF2PDF(inputFile, outputFile)
+            return result
+        elif ModType == 'dropPage':
+            input_pdf = PdfFileReader(open(inputFile, "rb"))
+            output = PdfFileWriter()
+            pageNumber = mod.get('pageNumber', 0)
+            angle = mod.get('angle', 0)
+            for pageInd in range(input_pdf.getNumPages()):
+                if pageNumber != pageInd + 1:
+                    output.addPage(input_pdf.getPage(pageInd))
+            outputFile = optionsData.get('outputFile')
+            outputStream = open(outputFile, "wb")
+            output.write(outputStream)
+            outputStream.close()
+            return ''
+        elif ModType == 'extractPage':
+            input_pdf = PdfFileReader(open(inputFile, "rb"))
+            output = PdfFileWriter()
+            pageNumber = mod.get('pageNumber', 0)
+            angle = mod.get('angle', 0)
+            for pageInd in range(input_pdf.getNumPages()):
+                if pageNumber == pageInd + 1:
+                    output.addPage(input_pdf.getPage(pageInd))
+            outputFile = optionsData.get('outputFile')
+            outputStream = open(outputFile, "wb")
+            output.write(outputStream)
+            outputStream.close()
+            return ''
     except Exception as errorObject:
         return str(errorObject)
+
+def TIFF2PDF(fileName, newFileName, max_pages = 500):
+    '''
+    Convert a TIFF Image into a PDF.
+
+    tiff_str: The binary representation of the TIFF.
+    max_pages: Break after a number of pages. Set to None to have no limit.
+    '''
+
+    result = ''
+    try:
+        with open(fileName, 'rb') as file:
+            tiff_str = file.read()
+        # Open the Image in PIL
+        tiff_img = PIL.Image.open(io.BytesIO(tiff_str))
+
+        # Get tiff dimensions from exiff data. The values are swapped for some reason.
+        height, width = tiff_img.tag[0x101][0], tiff_img.tag[0x100][0]
+
+        # Create our output PDF
+        out_pdf_io = io.BytesIO()
+        c = reportlab.pdfgen.canvas.Canvas(out_pdf_io, pagesize = pdf_sizes.A4)
+
+        # The PDF Size
+        pdf_width, pdf_height = pdf_sizes.A4
+
+        # Iterate through the pages
+        page = 0
+        while True:
+            try:
+                tiff_img.seek(page)
+            except EOFError:
+                break
+            #Converting tiff page: page
+            # Stretch the TIFF image to the full page of the PDF
+            if pdf_width * height/width <= pdf_height:
+                # Stretch wide
+                w_pos = 0
+                h_pos = pdf_height - pdf_width * height/width - 5
+                c.drawInlineImage(tiff_img, w_pos, h_pos, pdf_width, pdf_width * height/width, anchor='c')
+            else:
+                # Stretch long
+                w_pos = 0
+                h_pos = 5
+                c.drawInlineImage(tiff_img, w_pos, h_pos, pdf_height * width/height, pdf_height, anchor='c')
+                c.showPage()
+            if max_pages and page > max_pages:
+                result = 'Too many pages, breaking early'
+                break
+            page += 1
+
+        #Saving tiff image
+        c.save()
+        new_pdf = PdfFileReader(out_pdf_io)
+        output = PdfFileWriter()
+        for pageInd in range(new_pdf.getNumPages()):
+            output.addPage(new_pdf.getPage(pageInd))
+        outputStream = open(newFileName, "wb")
+        output.write(outputStream)
+        outputStream.close()
+    except Exception as errorObject:
+        result = str(errorObject)
+    return result
 
 if __name__ == '__main__':
     resultInfo = {}
     resultInfo['result'] = False
     resultInfo['errorText'] = 'Unknown error'
     # check arg
-    if len(sys.argv) == 1:
+    #if len(sys.argv) == 1:
+    if False:
         resultInfo['errorText'] = 'First argument not found (options file name)'
     else:
-        optionsFile = sys.argv[1]
+        if len(sys.argv) == 1:
+            optionsFile = os.getcwd() + '/options.json'
+        else:
+            optionsFile = sys.argv[1]
         # check exist
         if os.path.exists(optionsFile) == False:
             resultInfo['errorText'] = 'Options file not found ("' + str(optionsFile) + '")'
